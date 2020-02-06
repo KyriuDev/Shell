@@ -11,11 +11,8 @@
 int main()
 {
 	while (1) {
-		struct cmdline *l;
-		int i, j;
-
-		printf("shell> ");
-		l = readcmd();
+		printf("passemoile> ");
+		struct cmdline *l = readcmd();
 
 		/* If input stream closed, normal termination */
 		if (!l) {
@@ -29,17 +26,44 @@ int main()
 			continue;
 		}
 
-		if (l->in) printf("in: %s\n", l->in);
-		if (l->out) printf("out: %s\n", l->out);
+		int fdin = -1;
+		int fdout = -1;
+
+		if (l->in) {
+			fdin = Open(l->in, O_RDONLY, 0);
+		}
+
+		if (l->out) {
+			fdout = Open(l->out, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+			if (fdout == -1 && errno == EACCES) {
+				printf("permission refusée : %s\n", l->out);
+			}
+		}
 
 		/* Display each command of the pipe */
-		for (i=0; l->seq[i]!=0; i++) {
+		for (int i = 0; l->seq[i]; i++) {
 			char **cmd = l->seq[i];
-			printf("seq[%d]: ", i);
-			for (j=0; cmd[j]!=0; j++) {
-				printf("%s ", cmd[j]);
+
+			if (strcmp(cmd[0], "quit") == 0) {
+				printf("exit\n");
+				exit(0);
 			}
-			printf("\n");
+
+			if (Fork() == 0) {
+				if (fdin != -1) Dup2(fdin, 0);
+				if (fdout != -1) Dup2(fdout, 1);
+
+				if (execvp(cmd[0], cmd) == -1) {
+					fprintf(stderr, "impossible de trouver la commande : %s\n", cmd[0]);
+					exit(0);
+				}
+			}
 		}
+
+		int status;
+		Wait(&status);
+
+		if (fdin != -1) Close(fdin);
+		if (fdout != -1) Close(fdout);
 	}
 }
