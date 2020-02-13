@@ -5,6 +5,8 @@
 #ifndef __READCMD_H
 #define __READCMD_H
 
+#include <stdbool.h>
+
 /* Read a command line from input stream. Return null when input closed.
 Display an error and call exit() in case of memory exhaustion. */
 struct cmdline *readcmd(void);
@@ -17,6 +19,7 @@ struct cmdline {
 	char *in;	/* If not null : name of file for input redirection. */
 	char *out;	/* If not null : name of file for output redirection. */
 	char ***seq;	/* See comment below */
+	bool background;	
 };
 
 /* Field seq of struct cmdline :

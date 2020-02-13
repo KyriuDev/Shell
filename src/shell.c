@@ -7,11 +7,17 @@
 #include "readcmd.h"
 #include "csapp.h"
 
+void sigchild_handler(int sig) {
+	int status;
+	waitpid(-1, &status, WNOHANG | WUNTRACED);
+}
 
 int main()
 {
+	Signal(SIGCHLD, sigchild_handler);
+
 	while (1) {
-		printf("passemoile> ");
+		printf("pachemoile> ");
 		struct cmdline *l = readcmd();
 
 		/* If input stream closed, normal termination */
@@ -26,8 +32,8 @@ int main()
 			continue;
 		}
 
-        int previous_pipe[2];
         int current_pipe[2];
+        int previous_pipe_out;
 
 		/* Display each command of the pipe */
 		for (int i = 0; l->seq[i]; i++) {
@@ -55,30 +61,24 @@ int main()
                         if (fdout == -1 && errno == EACCES) {
                             printf("permission refusée : %s\n", l->out);
                         } else {
-                            //printf("redirection sortie vers fichier %i\n", i);
                             Dup2(fdout, 1);
                         }
                     }
                 } else {
-                    //printf("redirection sortie vers entree tube %i\n", i);
-                    //close(current_pipe[0]);
                     Dup2(current_pipe[1], 1);
-                    //close(current_pipe[1]);
+                    close(current_pipe[0]);
                 }
 
                 // redirection des entrees
                 if (i == 0) {
                    if (l->in) {
-                       //printf("redirection fichier vers entree %i\n", i);
                        int fdin = Open(l->in, O_RDONLY, 0);
                        Dup2(fdin, 0);
                    }
                 } else {
-                    //printf("redirection sortie tube vers entree %i\n", i);
-                    //close(current_pipe[1]);
-                    Dup2(previous_pipe[0], 0);
-                    //close(current_pipe[0]);
-                }
+				   	Dup2(previous_pipe_out, 0);
+              		close(previous_pipe_out);
+			   	}
 
                 // execution de la commande
 				if (execvp(cmd[0], cmd) == -1) {
@@ -86,13 +86,17 @@ int main()
 					exit(0);
 				}
 
-			}
+			} 
 
-            close(current_pipe[1]);
-            previous_pipe[0] = current_pipe[0];
+           	close(current_pipe[1]);
+			//close(previous_pipe_out);
+            previous_pipe_out = current_pipe[0];
 		}
 
-		int status;
-		Wait(&status);
+		if (!l->background) {
+			int status;
+			wait(&status);
+			//Wait(&status);
+		}
 	}
 }
