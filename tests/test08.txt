@@ -1,0 +1,6 @@
+#
+# test08.txt - Redirection entree
+#
+ls > f
+grep l < f
+rm f

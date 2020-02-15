@@ -1,0 +1,8 @@
+#
+# test09.txt - Execution en arriere plan
+#
+ls &
+echo &
+ls &
+echo &
+ps

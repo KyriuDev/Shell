@@ -1,0 +1,4 @@
+#
+# test06.txt - Tubes multiples
+#
+ls | grep l | grep a | wc

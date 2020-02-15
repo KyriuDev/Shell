@@ -1,0 +1,4 @@
+#
+# test05.txt - Tube seul
+#
+ls | wc

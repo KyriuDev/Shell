@@ -1,0 +1,9 @@
+#
+# test07.txt - Redirection sortie
+#
+echo "fromage de chevre" > f1
+cat f1 > f2
+cat f1
+cat f2
+diff f1 f2
+rm f1 f2
